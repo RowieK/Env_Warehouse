@@ -1,0 +1,105 @@
+{
+  "name": "env-warehouse",
+  "displayName": ".env Warehouse",
+  "description": "Securely store and manage reusable .env variables in a sidebar",
+  "version": "0.0.1",
+  "publisher": "env-warehouse",
+  "engines": {
+    "vscode": "^1.74.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "icon": "resources/activity-bar.svg",
+  "activationEvents": [
+    "onView:envWarehouse"
+  ],
+  "main": "./out/extension",
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "envWarehouseContainer",
+          "title": ".env Warehouse",
+          "icon": "resources/activity-bar.svg"
+        }
+      ]
+    },
+    "views": {
+      "envWarehouseContainer": [
+        {
+          "id": "envWarehouse",
+          "name": "Variables"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "envWarehouse.addVariable",
+        "title": "Add Variable",
+        "icon": "$(add)"
+      },
+      {
+        "command": "envWarehouse.editVariable",
+        "title": "Edit Variable",
+        "icon": "$(edit)"
+      },
+      {
+        "command": "envWarehouse.deleteVariable",
+        "title": "Delete Variable",
+        "icon": "$(trash)"
+      },
+      {
+        "command": "envWarehouse.exportAll",
+        "title": "Export All to .env",
+        "icon": "$(export)"
+      },
+      {
+        "command": "envWarehouse.injectVariable",
+        "title": "Inject to .env",
+        "icon": "$(arrow-right)"
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "envWarehouse.addVariable",
+          "when": "view == envWarehouse",
+          "group": "navigation"
+        },
+        {
+          "command": "envWarehouse.exportAll",
+          "when": "view == envWarehouse",
+          "group": "navigation"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "envWarehouse.injectVariable",
+          "when": "view == envWarehouse && viewItem == envVariable",
+          "group": "inline@1"
+        },
+        {
+          "command": "envWarehouse.editVariable",
+          "when": "view == envWarehouse && viewItem == envVariable",
+          "group": "inline@2"
+        },
+        {
+          "command": "envWarehouse.deleteVariable",
+          "when": "view == envWarehouse && viewItem == envVariable",
+          "group": "inline@3"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./"
+  },
+  "devDependencies": {
+    "@types/node": "^18.0.0",
+    "@types/vscode": "^1.74.0",
+    "typescript": "^5.0.0"
+  }
+}
