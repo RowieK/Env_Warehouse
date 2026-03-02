@@ -58,6 +58,11 @@
         "command": "envWarehouse.injectVariable",
         "title": "Inject to .env",
         "icon": "$(arrow-right)"
+      },
+      {
+        "command": "envWarehouse.searchVariable",
+        "title": "Search Variables",
+        "icon": "$(search)"
       }
     ],
     "menus": {
@@ -69,6 +74,11 @@
         },
         {
           "command": "envWarehouse.exportAll",
+          "when": "view == envWarehouse",
+          "group": "navigation"
+        },
+        {
+          "command": "envWarehouse.searchVariable",
           "when": "view == envWarehouse",
           "group": "navigation"
         }

@@ -1,6 +1,6 @@
 # .env Warehouse
 
-A professional Visual Studio Code extension to securely store and manage reusable `.env` variables in a sidebar.
+A Visual Studio Code extension to securely store and manage reusable `.env` variables in a sidebar.
 
 ## Features
 
@@ -35,4 +35,16 @@ Names must match `^[A-Z_][A-Z0-9_]*$` — uppercase letters, numbers, and unders
 ```bash
 npm install
 npm run compile
+```
+
+## Use Guide
+
+- **Creating variable** - By pressing the `+` sign in the `.ENV Warehouse` a pop-up on top of the screen appears - this is the `Variable Name`. When naming the variable press `Enter`.
+- **Inserting value** - After you've done the previous step, the `Value` of the variable must be given.
+- **Optional Description** - This is a note to remind the user what the variable is.
+- **Optional Category/Tag** - This is handy when multiple variables across multiple projects are stored. This can be used to identify the project the variable is used in.
+- **Export All to .env** - Export all .env variables from the warehouse to a .env file.
+- **Search Bar** - In the menu of the variables a search icon will be present. Env variables are searched based of name, description and category/tag for easy access of .env variables.
+```
+Variable ──> Value ──> Description ──> Category/Tag ──> Enter to save
 ```

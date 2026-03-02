@@ -256,7 +256,48 @@ export function activate(context: vscode.ExtensionContext): void {
     }
   );
 
-  context.subscriptions.push(treeView, addCmd, editCmd, deleteCmd, exportCmd, injectCmd);
+  const searchCmd = vscode.commands.registerCommand('envWarehouse.searchVariable', async () => {
+    const qp = vscode.window.createQuickPick<vscode.QuickPickItem>();
+    qp.placeholder = 'Search variables (name, value, description, category)';
+    qp.matchOnDescription = true;
+    qp.matchOnDetail = true;
+    let currentResults: EnvVariable[] = [];
+
+    const updateItems = (value: string) => {
+      currentResults = storage.searchVariables(value);
+      qp.items = currentResults.map(v => ({
+        label: v.name,
+        description: v.category,
+        detail: v.description || v.value
+      }));
+    };
+
+    qp.onDidChangeValue(v => updateItems(v));
+    qp.onDidAccept(async () => {
+      const sel = qp.selectedItems[0];
+      if (!sel) {
+        qp.hide();
+        return;
+      }
+      const idx = qp.items.findIndex(i => i.label === sel.label && i.description === sel.description && i.detail === sel.detail);
+      const variable = currentResults[idx];
+      qp.hide();
+
+      const action = await vscode.window.showQuickPick(['Inject to .env', 'Copy value', 'Cancel'], { placeHolder: `Action for ${variable.name}` });
+      if (action === 'Inject to .env') {
+        await injectVariableToEnvFile(variable);
+      } else if (action === 'Copy value') {
+        await vscode.env.clipboard.writeText(variable.value);
+        vscode.window.showInformationMessage('Value copied to clipboard.');
+      }
+    });
+
+    // initial population
+    updateItems('');
+    qp.show();
+  });
+
+  context.subscriptions.push(treeView, addCmd, editCmd, deleteCmd, exportCmd, injectCmd, searchCmd);
 }
 
 export function deactivate(): void {
