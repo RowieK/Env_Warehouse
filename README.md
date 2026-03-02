@@ -15,28 +15,6 @@ A Visual Studio Code extension to securely store and manage reusable `.env` vari
 
 Names must match `^[A-Z_][A-Z0-9_]*$` — uppercase letters, numbers, and underscores only (e.g. `API_KEY`, `DB_HOST`).
 
-## Project Structure
-
-```
-.
-├── src/
-│   ├── extension.ts            # Extension entry point & command handlers
-│   ├── envVariableProvider.ts  # TreeDataProvider for the sidebar
-│   ├── storage.ts              # globalState persistence layer
-│   └── types.ts                # EnvVariable interface
-├── resources/
-│   └── activity-bar.svg        # Activity Bar icon
-├── package.json
-└── tsconfig.json
-```
-
-## Building
-
-```bash
-npm install
-npm run compile
-```
-
 ## Use Guide
 
 - **Creating variable** - By pressing the `+` sign in the `.ENV Warehouse` a pop-up on top of the screen appears - this is the `Variable Name`. When naming the variable press `Enter`.
