@@ -50,26 +50,54 @@ export class Storage {
 
   searchVariables(query: string): EnvVariable[] {
     const q = (query || '').trim().toLowerCase();
-    const all = this.getVariables();
-    if (!q) return all;
+
+    // collect top-level variables and folder variables, keep folder name for scoring
+    const top = this.getVariables();
+    const folders = this.getFolders();
+
+    const map = new Map<string, { v: EnvVariable; folderName?: string }>();
+
+    // prefer top-level variable when id conflicts
+    for (const v of top) {
+      map.set(v.id, { v });
+    }
+
+    for (const f of folders) {
+      for (const v of f.variables) {
+        if (!map.has(v.id)) {
+          map.set(v.id, { v, folderName: f.name });
+        }
+      }
+    }
+
+    const all = Array.from(map.values());
+    if (!q) return all.map(a => a.v);
 
     type Scored = { v: EnvVariable; score: number };
-    const scored: Scored[] = all.map(v => {
+    const scored: Scored[] = all.map(a => {
       let score = 0;
+      const v = a.v;
       const name = (v.name || '').toLowerCase();
       const value = (v.value || '').toLowerCase();
       const desc = (v.description || '').toLowerCase();
       const cat = (v.category || '').toLowerCase();
+      const folder = (a.folderName || '').toLowerCase();
 
+      // exact matches
       if (name === q) score += 200;
       if (value === q) score += 150;
+      if (folder === q) score += 120;
 
+      // startsWith boosts
       if (name.startsWith(q)) score += 80;
+      if (folder.startsWith(q)) score += 60;
       if (value.startsWith(q)) score += 60;
       if (desc.startsWith(q)) score += 40;
       if (cat.startsWith(q)) score += 30;
 
+      // contains
       if (name.includes(q)) score += 50;
+      if (folder.includes(q)) score += 30;
       if (value.includes(q)) score += 40;
       if (desc.includes(q)) score += 20;
       if (cat.includes(q)) score += 15;
