@@ -1,9 +1,9 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import * as fs from 'fs';
-import { EnvVariable } from './types';
+import { EnvVariable, EnvFolder } from './types';
 import { Storage } from './storage';
-import { EnvVariableProvider, EnvVariableItem } from './envVariableProvider';
+import { EnvVariableProvider, EnvVariableItem, EnvFolderItem } from './envVariableProvider';
 
 const VAR_NAME_PATTERN = /^[A-Z_][A-Z0-9_]*$/;
 
@@ -256,6 +256,114 @@ export function activate(context: vscode.ExtensionContext): void {
     }
   );
 
+  const addFolderCmd = vscode.commands.registerCommand('envWarehouse.addFolder', async () => {
+    const name = await vscode.window.showInputBox({
+      title: 'New Folder Name',
+      prompt: 'Enter folder name'
+    });
+    if (!name) return;
+    const folder: EnvFolder = { id: generateId(), name: name.trim(), variables: [] };
+    await storage.addFolder(folder);
+    provider.refresh();
+    vscode.window.showInformationMessage(`Folder "${folder.name}" created.`);
+  });
+
+  const editFolderCmd = vscode.commands.registerCommand('envWarehouse.editFolder', async (item: EnvFolderItem) => {
+    const name = await vscode.window.showInputBox({
+      title: 'Edit Folder Name',
+      value: item.folder.name
+    });
+    if (!name) return;
+    await storage.updateFolder(item.folder.id, { name: name.trim() });
+    provider.refresh();
+    vscode.window.showInformationMessage(`Folder renamed to "${name.trim()}".`);
+  });
+
+  const deleteFolderCmd = vscode.commands.registerCommand('envWarehouse.deleteFolder', async (item: EnvFolderItem) => {
+    const answer = await vscode.window.showWarningMessage(
+      `Delete folder "${item.folder.name}" and all its variables?`,
+      { modal: true },
+      'Delete'
+    );
+    if (answer !== 'Delete') return;
+    await storage.deleteFolder(item.folder.id);
+    provider.refresh();
+    vscode.window.showInformationMessage(`Folder "${item.folder.name}" deleted.`);
+  });
+
+  const addVariableToFolderCmd = vscode.commands.registerCommand(
+    'envWarehouse.addVariableToFolder',
+    async (item: EnvFolderItem) => {
+      const variable = await promptVariableInput();
+      if (!variable) return;
+      // store variable inside the selected folder
+      await storage.addVariableToFolder(item.folder.id, variable);
+      provider.refresh();
+      vscode.window.showInformationMessage(`Variable "${variable.name}" added to folder "${item.folder.name}".`);
+    }
+  );
+
+  async function injectFolderToEnvFile(folderId: string): Promise<void> {
+    const folder = storage.getFolderById(folderId);
+    if (!folder) {
+      vscode.window.showErrorMessage('Folder not found.');
+      return;
+    }
+    if (folder.variables.length === 0) {
+      vscode.window.showWarningMessage('Folder contains no variables to inject.');
+      return;
+    }
+
+    const envFilePath = await getEnvFilePath();
+    if (!envFilePath) return;
+    const uri = vscode.Uri.file(envFilePath);
+    const wsEdit = new vscode.WorkspaceEdit();
+
+    if (fs.existsSync(envFilePath)) {
+      const document = await vscode.workspace.openTextDocument(uri);
+      const rawContent = document.getText();
+      const existingNames = new Set(
+        rawContent.split('\n')
+          .filter(l => {
+            const t = l.trim();
+            return t && !t.startsWith('#') && t.includes('=');
+          })
+          .map(l => l.split('=')[0].trim())
+      );
+
+      const newLines = folder.variables
+        .filter(v => !existingNames.has(v.name))
+        .map(v => `${v.name}=${v.value}`)
+        .join('\n');
+
+      if (!newLines) {
+        vscode.window.showWarningMessage('All folder variables already exist in the .env file.');
+        return;
+      }
+
+      const endsWithNewline = rawContent.endsWith('\n');
+      const insertText = endsWithNewline ? `${newLines}\n` : `\n${newLines}\n`;
+      const endPosition = document.lineAt(document.lineCount - 1).range.end;
+      wsEdit.insert(uri, endPosition, insertText);
+    } else {
+      const lines = folder.variables.map(v => `${v.name}=${v.value}`).join('\n') + '\n';
+      wsEdit.createFile(uri, { ignoreIfExists: false });
+      wsEdit.insert(uri, new vscode.Position(0, 0), lines);
+    }
+
+    const success = await vscode.workspace.applyEdit(wsEdit);
+    if (success) {
+      await vscode.workspace.openTextDocument(uri);
+      vscode.window.showInformationMessage(`All variables from "${folder.name}" injected into .env successfully.`);
+    } else {
+      vscode.window.showErrorMessage('Failed to inject folder variables into .env file.');
+    }
+  }
+
+  const injectFolderCmd = vscode.commands.registerCommand('envWarehouse.injectFolder', async (item: EnvFolderItem) => {
+    await injectFolderToEnvFile(item.folder.id);
+  });
+
   const searchCmd = vscode.commands.registerCommand('envWarehouse.searchVariable', async () => {
     const qp = vscode.window.createQuickPick<vscode.QuickPickItem>();
     qp.placeholder = 'Search variables (name, value, description, category)';
@@ -297,7 +405,7 @@ export function activate(context: vscode.ExtensionContext): void {
     qp.show();
   });
 
-  context.subscriptions.push(treeView, addCmd, editCmd, deleteCmd, exportCmd, injectCmd, searchCmd);
+  context.subscriptions.push(treeView, addCmd, editCmd, deleteCmd, exportCmd, injectCmd, searchCmd, addFolderCmd, editFolderCmd, deleteFolderCmd, addVariableToFolderCmd, injectFolderCmd);
 }
 
 export function deactivate(): void {

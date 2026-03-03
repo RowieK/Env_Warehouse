@@ -63,10 +63,40 @@
         "command": "envWarehouse.searchVariable",
         "title": "Search Variables",
         "icon": "$(search)"
+      },
+      {
+        "command": "envWarehouse.addFolder",
+        "title": "Add Folder",
+        "icon": "$(folder)"
+      },
+      { 
+        "command": "envWarehouse.addVariableToFolder", 
+        "title": "Add Variable to Folder", 
+        "icon":"$(add)" 
+      },
+      {
+        "command": "envWarehouse.editFolder",
+        "title": "Edit Folder Name",
+        "icon": "$(edit)"
+      },
+      {
+        "command": "envWarehouse.deleteFolder",
+        "title": "Delete Folder",
+        "icon": "$(trash)"
+      },
+      {
+        "command": "envWarehouse.injectFolder",
+        "title": "Inject Folder to .env",
+        "icon": "$(arrow-right)"
       }
     ],
     "menus": {
       "view/title": [
+        {
+          "command": "envWarehouse.addFolder",
+          "when": "view == envWarehouse",
+          "group": "navigation"
+        },
         {
           "command": "envWarehouse.addVariable",
           "when": "view == envWarehouse",
@@ -84,6 +114,26 @@
         }
       ],
       "view/item/context": [
+        {
+          "command": "envWarehouse.injectFolder",
+          "when": "view == envWarehouse && viewItem == envFolder",
+          "group": "inline@1"
+        },
+        { 
+          "command": "envWarehouse.addVariableToFolder", 
+          "when": "view == envWarehouse && viewItem == envFolder", 
+          "group": "inline@1" 
+        },
+        {
+          "command": "envWarehouse.editFolder",
+          "when": "view == envWarehouse && viewItem == envFolder",
+          "group": "inline@2"
+        },
+        {
+          "command": "envWarehouse.deleteFolder",
+          "when": "view == envWarehouse && viewItem == envFolder",
+          "group": "inline@3"
+        },
         {
           "command": "envWarehouse.injectVariable",
           "when": "view == envWarehouse && viewItem == envVariable",

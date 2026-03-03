@@ -1,12 +1,12 @@
 import * as vscode from 'vscode';
-import { EnvVariable } from './types';
-
+import { EnvVariable, EnvFolder } from './types';
 const STORAGE_KEY = 'envWarehouse.variables';
+const FOLDERS_KEY = 'envWarehouse.folders';
 
 export class Storage {
   constructor(private readonly context: vscode.ExtensionContext) {}
 
-  getVariables(): EnvVariable[] {
+    getVariables(): EnvVariable[] {
     return this.context.globalState.get<EnvVariable[]>(STORAGE_KEY, []);
   }
 
@@ -60,7 +60,6 @@ export class Storage {
       if (desc.includes(q)) score += 20;
       if (cat.includes(q)) score += 15;
 
-      // small boost for shorter Levenshtein-like partial: difference in length (simple heuristic)
       const lenDiff = Math.abs(name.length - q.length);
       score += Math.max(0, 10 - Math.min(10, lenDiff));
 
@@ -71,5 +70,61 @@ export class Storage {
       .filter(s => s.score > 0)
       .sort((a, b) => b.score - a.score)
       .map(s => s.v);
+  }
+
+  // Folder APIs
+  getFolderVariables(folderId: string): EnvVariable[] {
+    const folder = this.getFolderById(folderId);
+    return folder?.variables || [];
+  }
+  
+  getFolders(): EnvFolder[] {
+    return this.context.globalState.get<EnvFolder[]>(FOLDERS_KEY, []);
+  }
+
+  async saveFolders(folders: EnvFolder[]): Promise<void> {
+    await this.context.globalState.update(FOLDERS_KEY, folders);
+  }
+
+  async addFolder(folder: EnvFolder): Promise<void> {
+    const folders = this.getFolders();
+    folders.push(folder);
+    await this.saveFolders(folders);
+  }
+
+  async updateFolder(id: string, updated: Partial<Omit<EnvFolder, 'id' | 'variables'>> & { variables?: EnvVariable[] }): Promise<void> {
+    const folders = this.getFolders();
+    const index = folders.findIndex(f => f.id === id);
+    if (index !== -1) {
+      folders[index] = { ...folders[index], ...updated };
+      await this.saveFolders(folders);
+    }
+  }
+
+  async deleteFolder(id: string): Promise<void> {
+    const folders = this.getFolders().filter(f => f.id !== id);
+    await this.saveFolders(folders);
+  }
+
+  async addVariableToFolder(folderId: string, variable: EnvVariable): Promise<void> {
+    const folders = this.getFolders();
+    const idx = folders.findIndex(f => f.id === folderId);
+    if (idx !== -1) {
+      folders[idx].variables.push(variable);
+      await this.saveFolders(folders);
+    }
+  }
+
+  async removeVariableFromFolder(folderId: string, variableId: string): Promise<void> {
+    const folders = this.getFolders();
+    const idx = folders.findIndex(f => f.id === folderId);
+    if (idx !== -1) {
+      folders[idx].variables = folders[idx].variables.filter(v => v.id !== variableId);
+      await this.saveFolders(folders);
+    }
+  }
+
+  getFolderById(id: string): EnvFolder | undefined {
+    return this.getFolders().find(f => f.id === id);
   }
 }

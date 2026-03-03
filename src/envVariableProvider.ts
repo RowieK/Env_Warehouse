@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { EnvVariable } from './types';
+import { EnvFolder, EnvVariable } from './types';
 import { Storage } from './storage';
 
 export class EnvVariableItem extends vscode.TreeItem {
@@ -26,9 +26,9 @@ export class EnvVariableItem extends vscode.TreeItem {
   }
 }
 
-export class EnvVariableProvider implements vscode.TreeDataProvider<EnvVariableItem> {
+export class EnvVariableProvider implements vscode.TreeDataProvider<vscode.TreeItem> {
   private readonly _onDidChangeTreeData =
-    new vscode.EventEmitter<EnvVariableItem | undefined | null | void>();
+    new vscode.EventEmitter<vscode.TreeItem | undefined | null | void>();
   readonly onDidChangeTreeData = this._onDidChangeTreeData.event;
 
   constructor(private readonly storage: Storage) {}
@@ -37,15 +37,27 @@ export class EnvVariableProvider implements vscode.TreeDataProvider<EnvVariableI
     this._onDidChangeTreeData.fire();
   }
 
-  getTreeItem(element: EnvVariableItem): vscode.TreeItem {
+  getTreeItem(element: vscode.TreeItem): vscode.TreeItem {
     return element;
   }
 
-  getChildren(element?: EnvVariableItem): vscode.ProviderResult<EnvVariableItem[]> {
-    if (element) {
-      return [];
+  getChildren(element?: vscode.TreeItem): vscode.ProviderResult<vscode.TreeItem[]> {
+    if (element instanceof EnvFolderItem) {
+      // return variables inside this folder
+      return element.folder.variables.map(v => new EnvVariableItem(v));
     }
-    const variables = this.storage.getVariables();
-    return variables.map(v => new EnvVariableItem(v));
+
+    // top-level: folders first, then ungrouped variables
+    const folders = this.storage.getFolders().map(f => new EnvFolderItem(f));
+    const variables = this.storage.getVariables().map(v => new EnvVariableItem(v) as vscode.TreeItem);
+    return [...folders, ...variables];
+  }
+}
+
+export class EnvFolderItem extends vscode.TreeItem {
+  constructor(public readonly folder: EnvFolder) {
+    super(folder.name, vscode.TreeItemCollapsibleState.Collapsed);
+    this.contextValue = 'envFolder';
+    this.description = `${folder.variables.length} variables`;
   }
 }
