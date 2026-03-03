@@ -303,6 +303,45 @@ export function activate(context: vscode.ExtensionContext): void {
     }
   );
 
+  const removeVariableFromFolderCmd = vscode.commands.registerCommand(
+    'envWarehouse.removeVariableFromFolder',
+    async (item: any) => {
+      // tolerate either EnvVariableItem or raw EnvVariable object
+      const variableId: string | undefined =
+        item?.variable?.id ?? item?.id;
+
+      if (!variableId) {
+        vscode.window.showErrorMessage('No variable selected.');
+        return;
+      }
+
+      const folder = storage.getFolders().find(f => f.variables.some(v => v.id === variableId));
+      if (!folder) {
+        vscode.window.showErrorMessage('Folder not found.');
+        return;
+      }
+
+      const variable = folder.variables.find(v => v.id === variableId) ?? (item?.variable ?? item);
+
+      const answer = await vscode.window.showWarningMessage(
+        `Move variable "${variable?.name ?? variableId}" out of folder "${folder.name}"?`,
+        { modal: true },
+        'Move'
+      );
+      if (answer !== 'Move') return;
+
+      // remove from folder and add to top-level variables (if not already present)
+      await storage.removeVariableFromFolder(folder.id, variableId);
+      const existsTop = storage.getVariables().some(v => v.id === variableId);
+      if (!existsTop && variable) {
+        await storage.addVariable(variable);
+      }
+
+      provider.refresh();
+      vscode.window.showInformationMessage(`Variable "${variable?.name ?? variableId}" moved out of folder "${folder.name}".`);
+    }
+  );
+
   async function injectFolderToEnvFile(folderId: string): Promise<void> {
     const folder = storage.getFolderById(folderId);
     if (!folder) {
@@ -405,7 +444,7 @@ export function activate(context: vscode.ExtensionContext): void {
     qp.show();
   });
 
-  context.subscriptions.push(treeView, addCmd, editCmd, deleteCmd, exportCmd, injectCmd, searchCmd, addFolderCmd, editFolderCmd, deleteFolderCmd, addVariableToFolderCmd, injectFolderCmd);
+  context.subscriptions.push(treeView, addCmd, editCmd, deleteCmd, exportCmd, injectCmd, searchCmd, addFolderCmd, editFolderCmd, deleteFolderCmd, addVariableToFolderCmd, removeVariableFromFolderCmd, injectFolderCmd);
 }
 
 export function deactivate(): void {

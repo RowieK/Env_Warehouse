@@ -16,7 +16,13 @@ export class Storage {
 
   async addVariable(variable: EnvVariable): Promise<void> {
     const variables = this.getVariables();
-    variables.push(variable);
+    const idx = variables.findIndex(v => v.id === variable.id);
+    if (idx !== -1) {
+      // replace existing with same id
+      variables[idx] = variable;
+    } else {
+      variables.push(variable);
+    }
     await this.saveVariables(variables);
   }
 
@@ -30,8 +36,16 @@ export class Storage {
   }
 
   async deleteVariable(id: string): Promise<void> {
+    // remove from top-level variables
     const variables = this.getVariables().filter(v => v.id !== id);
     await this.saveVariables(variables);
+
+    // also remove from any folder that contains it
+    const folders = this.getFolders().map(f => ({
+      ...f,
+      variables: f.variables.filter(v => v.id !== id)
+    }));
+    await this.saveFolders(folders);
   }
 
   searchVariables(query: string): EnvVariable[] {
