@@ -151,7 +151,7 @@
         },
         {
           "command": "envWarehouse.removeVariableFromFolder",
-          "when": "view == envWarehouse && viewItem == envVariable",
+          "when": "view == envWarehouse && viewItem == envVariableInFolder",
           "group": "inline@2"
         },
         {
@@ -166,17 +166,17 @@
         },
         {
           "command": "envWarehouse.injectVariable",
-          "when": "view == envWarehouse && viewItem == envVariable",
+          "when": "view == envWarehouse && (viewItem == envVariable || viewItem == envVariableInFolder)",
           "group": "inline@1"
         },
         {
           "command": "envWarehouse.editVariable",
-          "when": "view == envWarehouse && viewItem == envVariable",
+          "when": "view == envWarehouse && (viewItem == envVariable || viewItem == envVariableInFolder)",
           "group": "inline@2"
         },
         {
           "command": "envWarehouse.deleteVariable",
-          "when": "view == envWarehouse && viewItem == envVariable",
+          "when": "view == envWarehouse && (viewItem == envVariable || viewItem == envVariableInFolder)",
           "group": "inline@3"
         }
       ]

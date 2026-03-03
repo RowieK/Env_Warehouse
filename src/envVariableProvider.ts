@@ -3,7 +3,7 @@ import { EnvFolder, EnvVariable } from './types';
 import { Storage } from './storage';
 
 export class EnvVariableItem extends vscode.TreeItem {
-  constructor(public readonly variable: EnvVariable) {
+  constructor(public readonly variable: EnvVariable, public readonly inFolder = false) {
     super(variable.name, vscode.TreeItemCollapsibleState.None);
 
     const parts: string[] = [];
@@ -22,7 +22,8 @@ export class EnvVariableItem extends vscode.TreeItem {
       (variable.category ? `\n\nCategory: ${variable.category}` : '')
     );
 
-    this.contextValue = 'envVariable';
+    // set different context values depending on whether this variable is inside a folder
+    this.contextValue = inFolder ? 'envVariableInFolder' : 'envVariable';
   }
 }
 
@@ -43,13 +44,13 @@ export class EnvVariableProvider implements vscode.TreeDataProvider<vscode.TreeI
 
   getChildren(element?: vscode.TreeItem): vscode.ProviderResult<vscode.TreeItem[]> {
     if (element instanceof EnvFolderItem) {
-      // return variables inside this folder
-      return element.folder.variables.map(v => new EnvVariableItem(v));
+      // return variables inside this folder (mark them as in-folder)
+      return element.folder.variables.map(v => new EnvVariableItem(v, true));
     }
 
-    // top-level: folders first, then ungrouped variables
+    // top-level: folders first, then ungrouped variables (mark top-level variables as not in-folder)
     const folders = this.storage.getFolders().map(f => new EnvFolderItem(f));
-    const variables = this.storage.getVariables().map(v => new EnvVariableItem(v) as vscode.TreeItem);
+    const variables = this.storage.getVariables().map(v => new EnvVariableItem(v, false) as vscode.TreeItem);
     return [...folders, ...variables];
   }
 }
