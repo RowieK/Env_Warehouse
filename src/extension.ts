@@ -191,6 +191,78 @@ async function exportAllVariables(storage: Storage): Promise<void> {
   }
 }
 
+async function parseEnvFileContent(content: string): Promise<EnvVariable[]> {
+  const map = new Map<string, EnvVariable>();
+  const lines = content.split(/\r?\n/);
+  for (const l of lines) {
+    const line = l.trim();
+    if (!line || line.startsWith('#') || !line.includes('=')) continue;
+    const idx = line.indexOf('=');
+    const name = line.slice(0, idx).trim();
+    const value = line.slice(idx + 1);
+    if (!VAR_NAME_PATTERN.test(name)) continue;
+    if (!map.has(name)) {
+      map.set(name, { id: generateId(), name, value });
+    }
+  }
+  return Array.from(map.values());
+}
+
+async function importEnvFile(storage: Storage, provider: EnvVariableProvider): Promise<void> {
+  const uris = await vscode.window.showOpenDialog({
+    canSelectMany: false,
+    openLabel: 'Import .env',
+    filters: { Env: ['env'], All: ['*'] }
+  });
+  if (!uris || uris.length === 0) return;
+  const content = fs.readFileSync(uris[0].fsPath, 'utf8');
+  const vars = await parseEnvFileContent(content);
+  if (vars.length === 0) {
+    vscode.window.showWarningMessage('No valid variables found in the selected .env file.');
+    return;
+  }
+
+  const existingNames = new Set(storage.getVariables().map(v => v.name));
+  let added = 0;
+  for (const v of vars) {
+    if (existingNames.has(v.name)) continue;
+    await storage.addVariable(v);
+    added++;
+  }
+  provider.refresh();
+  vscode.window.showInformationMessage(`${added} variable(s) imported to .env Warehouse (${vars.length - added} skipped as duplicates).`);
+}
+
+async function importEnvFileToFolder(storage: Storage, provider: EnvVariableProvider, folderId: string): Promise<void> {
+  const uris = await vscode.window.showOpenDialog({
+    canSelectMany: false,
+    openLabel: 'Import .env to folder',
+    filters: { Env: ['env'], All: ['*'] }
+  });
+  if (!uris || uris.length === 0) return;
+  const content = fs.readFileSync(uris[0].fsPath, 'utf8');
+  const vars = await parseEnvFileContent(content);
+  if (vars.length === 0) {
+    vscode.window.showWarningMessage('No valid variables found in the selected .env file.');
+    return;
+  }
+
+  const folder = storage.getFolderById(folderId);
+  if (!folder) {
+    vscode.window.showErrorMessage('Target folder not found.');
+    return;
+  }
+  const existingNames = new Set(folder.variables.map(v => v.name));
+  let added = 0;
+  for (const v of vars) {
+    if (existingNames.has(v.name)) continue;
+    await storage.addVariableToFolder(folderId, v);
+    added++;
+  }
+  provider.refresh();
+  vscode.window.showInformationMessage(`${added} variable(s) imported into folder "${folder.name}" (${vars.length - added} skipped as duplicates).`);
+}
+
 export function activate(context: vscode.ExtensionContext): void {
   const storage = new Storage(context);
   const provider = new EnvVariableProvider(storage);
@@ -403,6 +475,14 @@ export function activate(context: vscode.ExtensionContext): void {
     await injectFolderToEnvFile(item.folder.id);
   });
 
+  const importCmd = vscode.commands.registerCommand('envWarehouse.importEnv', async () => {
+    await importEnvFile(storage, provider);
+  });
+
+  const importFolderCmd = vscode.commands.registerCommand('envWarehouse.importEnvToFolder', async (item: EnvFolderItem) => {
+    await importEnvFileToFolder(storage, provider, item.folder.id);
+  });
+
   const searchCmd = vscode.commands.registerCommand('envWarehouse.searchVariable', async () => {
     const qp = vscode.window.createQuickPick<vscode.QuickPickItem>();
     qp.placeholder = 'Search variables (name, value, description, category)';
@@ -444,7 +524,7 @@ export function activate(context: vscode.ExtensionContext): void {
     qp.show();
   });
 
-  context.subscriptions.push(treeView, addCmd, editCmd, deleteCmd, exportCmd, injectCmd, searchCmd, addFolderCmd, editFolderCmd, deleteFolderCmd, addVariableToFolderCmd, removeVariableFromFolderCmd, injectFolderCmd);
+  context.subscriptions.push(treeView, addCmd, editCmd, deleteCmd, exportCmd, injectCmd, searchCmd, addFolderCmd, editFolderCmd, deleteFolderCmd, addVariableToFolderCmd, removeVariableFromFolderCmd, injectFolderCmd, importCmd, importFolderCmd);
 }
 
 export function deactivate(): void {

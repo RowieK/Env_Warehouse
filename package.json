@@ -93,12 +93,27 @@
         "command": "envWarehouse.injectFolder",
         "title": "Inject Folder to .env",
         "icon": "$(arrow-right)"
+      },
+      {
+        "command": "envWarehouse.importEnv",
+        "title": "Import .env File",
+        "icon": "$(cloud-upload)"
+      },
+      {
+        "command": "envWarehouse.importEnvToFolder",
+        "title": "Import .env File to Folder",
+        "icon": "$(cloud-upload)"
       }
     ],
     "menus": {
       "view/title": [
         {
           "command": "envWarehouse.addFolder",
+          "when": "view == envWarehouse",
+          "group": "navigation"
+        },
+        {
+          "command": "envWarehouse.importEnv",
           "when": "view == envWarehouse",
           "group": "navigation"
         },
@@ -121,6 +136,11 @@
       "view/item/context": [
         {
           "command": "envWarehouse.injectFolder",
+          "when": "view == envWarehouse && viewItem == envFolder",
+          "group": "inline@1"
+        },
+        {
+          "command": "envWarehouse.importEnvToFolder",
           "when": "view == envWarehouse && viewItem == envFolder",
           "group": "inline@1"
         },
