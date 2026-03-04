@@ -10,7 +10,7 @@
   "categories": [
     "Other"
   ],
-  "icon": "resources/envwarehouse.svg",
+  "icon": "resources/envwarehouse.png",
   "activationEvents": [
     "onView:envWarehouse"
   ],
@@ -29,7 +29,8 @@
       "envWarehouseContainer": [
         {
           "id": "envWarehouse",
-          "name": "Variables"
+          "name": "Variables",
+          "icon": "resources/envwarehouse.svg"
         }
       ]
     },
