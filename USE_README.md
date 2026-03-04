@@ -77,4 +77,4 @@ Tip: You can maintain templates in your workspace and paste values when configur
 
 ## Want more?
 
-If you'd like features such as import/export, templated injection into `tasks.json`/`launch.json`, or secure storage, I can implement those next. Tell me which feature to prioritize.
+Feel free to leave some suggestions!
