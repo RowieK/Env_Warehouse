@@ -2,7 +2,7 @@
   "name": "env-warehouse",
   "displayName": ".env Warehouse",
   "description": "Securely store and manage reusable .env variables in a sidebar",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "publisher": "env-warehouse",
   "engines": {
     "vscode": "^1.74.0"
