@@ -3,3 +3,4 @@ node_modules/
 *.vsix
 .vscode-test/
 Technical README.md
+env-warehouse-1.0.0.vsix
