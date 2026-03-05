@@ -14,7 +14,7 @@
   "categories": [
     "Other"
   ],
-  "icon": "resources/envwarehouse.png",
+  "icon": "resources/env-warehouse_logo.png",
   "activationEvents": [
     "onView:envWarehouse"
   ],
