@@ -3,7 +3,7 @@
   "displayName": ".env Warehouse",
   "description": "Securely store and manage reusable .env variables in a sidebar",
   "version": "1.0.0",
-  "publisher": "env-warehouse",
+  "publisher": "rowiek",
   "repository": {
     "type": "git",
     "url": "https://github.com/RowieK/Env_Warehouse"
